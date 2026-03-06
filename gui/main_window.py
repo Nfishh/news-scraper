@@ -159,7 +159,6 @@ class MainWindow(QMainWindow):
 
     def add_to_table(self, data):
 
-        
         row_position = self.table.rowCount()
         self.table.insertRow(row_position)
 

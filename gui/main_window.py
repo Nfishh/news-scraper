@@ -52,7 +52,7 @@ class MainWindow(QMainWindow):
         self.start_button = QPushButton("Start Scraping")
         self.export_button = QPushButton("Export")
 
-        # Style tombol
+        # Style Tombol
         self.start_button.setStyleSheet(
             "background-color: #4CAF50; color: white; padding:6px;"
         )
@@ -159,6 +159,7 @@ class MainWindow(QMainWindow):
 
     def add_to_table(self, data):
 
+        
         row_position = self.table.rowCount()
         self.table.insertRow(row_position)
 

@@ -51,8 +51,8 @@ _(Data tersimpan dengan aman dalam format utf-8-sig yang siap diolah lebih lanju
 
 Proyek ini dikerjakan oleh kelompok D4:
 
-1. 251524100 Fidella Rafida Ariani - GUI Designer
-2. 251524107 Zulfi Al Fikri Abdillah - Thread/Background Worker Developer
-3. 251524114 Muhammad Iqbal - Data Processing & GUI Integrator
-4. 251524115 Muhammad Nafis Idris - Selenium Scraper & URL Logic
-5. 251524117 Muhammad Ziddan - Export CSV
+1. 251524100 Fidella Rafida Ariani - GUI Designer -- Git contact: @FidellaFafidaAriani
+2. 251524107 Zulfi Al Fikri Abdillah - Thread/Background Worker Developer --  Git contact: @zulfi-real
+3. 251524114 Muhammad Iqbal - Data Processing & GUI Integrator -- Git contact: @akirandqq
+4. 251524115 Muhammad Nafis Idris - Selenium Scraper & URL Logic -- Git contact: @nfishh
+5. 251524117 Muhammad Ziddan - Export CSV -- Git contact: @muhammadziddan14

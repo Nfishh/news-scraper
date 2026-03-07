@@ -3,6 +3,7 @@
 # Tugas: Membersihkan dan memvalidasi data berita
 # ==========================================
 
+import re
 # !!Hanya Simulasi - Iqbal
 # Bikin Data Dummy (Simulasi data kotor dari Scraper)
 dummy_article = {
@@ -28,41 +29,40 @@ def clean_text(text):# <- Modul (1) yang wajib dipanggil kalo mau bersihin teks 
 
 # [Taruh di bawah fungsi clean_text]
 
-def parse_date(date_text): # <- Modul (2) yang wajib dipanggil kalo mau bersihin teks scrapingnya - Iqbal
+def parse_date(date_text):
     """
-    Mengubah teks tanggal bahasa Indonesia menjadi format standar YYYY-MM-DD.
-    Contoh input: "06 Maret 2026" -> Output: "2026-03-06"
+    Mengubah teks tanggal menjadi format YYYY-MM-DD menggunakan pelacak pola (Regex).
     """
     if not date_text:
         return ""
         
-    # 1. Kamus penerjemah bulan Indonesia ke angka
     bulan_indo = {
         "januari": "01", "februari": "02", "maret": "03", "april": "04",
         "mei": "05", "juni": "06", "juli": "07", "agustus": "08",
         "september": "09", "oktober": "10", "november": "11", "desember": "12"
     }
     
-    # 2. Kita bersihin dulu teksnya pakai fungsi yang udah kita bikin sebelumnya, lalu kecilin semua hurufnya (lower)
-    date_text = clean_text(date_text).lower() 
+    date_text = date_text.lower()
     
     try:
-        # 3. Misahin teks berdasarkan spasi. "06 maret 2026" jadi daftar: ["06", "maret", "2026"]
-        parts = date_text.split()
+        # Senjata rahasia Regex: Cari pola "angka(1-2 digit) spasi huruf spasi angka(4 digit)"
+        # Contoh yang bakal ketangkap: "7 maret 2026" atau "07 maret 2026"
+        match = re.search(r'(\d{1,2})\s+([a-z]+)\s+(\d{4})', date_text)
         
-        if len(parts) >= 3:
-            hari = parts[0].zfill(2) # zfill(2) ini trik biar kalau angkanya "6", otomatis ditambahin nol jadi "06"
-            bulan_teks = parts[1]
-            tahun = parts[2]
+        if match:
+            hari = match.group(1).zfill(2)
+            bulan_teks = match.group(2)
+            tahun = match.group(3)
             
-            # 4. Ambil angka bulan dari kamus. Kalau gak nemu, defaultnya "01"
             bulan_angka = bulan_indo.get(bulan_teks, "01") 
             
-            # 5. Susun ulang formatnya jadi Tahun-Bulan-Hari
             return f"{tahun}-{bulan_angka}-{hari}"
             
     except Exception as e:
         print(f"Ups, ada error pas nerjemahin tanggal: {e}")
+        
+    # Kalau gagal ngelacak pola, kembalikan teks aslinya (tapi udah dibersihin spasinya)
+    return clean_text(date_text)
         
     # Kalau gagal atau formatnya aneh banget, kembaliin teks aslinya aja
     return date_text 

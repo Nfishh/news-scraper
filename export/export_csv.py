@@ -1,38 +1,42 @@
 # ==========================================
-# File: export/export_csv.py
-# Tugas: Menyimpan hasil scraping ke file CSV
+# File: export_CSV.py
+# Tugas: Menyimpan hasil scraping ke file CSV 
 # ==========================================
-
 import csv
-
+import os
 
 def export_to_csv(data, filename="hasil_scraping_berita.csv"):
     """
-    Menyimpan data artikel ke file CSV.
-    Data berupa list of dictionary.
+    Versi Final: Kompatibel dengan GUI asli, 
+    lebih aman terhadap error folder dan karakter Excel.
     """
-
     if not data:
-        print("Tidak ada data untuk disimpan.")
+        print("Data kosong, tidak ada yang disimpan.")
         return
 
     try:
-        with open(filename, mode="w", newline="", encoding="utf-8") as file:
+        # Menangani pembuatan folder jika path mengandung folder (misal: 'export/hasil.csv')
+        directory = os.path.dirname(filename)
+        if directory and not os.path.exists(directory):
+            os.makedirs(directory)
 
-            writer = csv.writer(file)
+        # 'utf-8-sig' agar Excel menampilkan teks Indonesia dengan sempurna
+        with open(filename, mode="w", newline="", encoding="utf-8-sig") as file:
+            # Sesuai dengan data dictionary dari scraper
+            fieldnames = ["title", "date", "link"]
+            writer = csv.DictWriter(file, fieldnames=fieldnames)
 
-            # Header kolom
-            writer.writerow(["Judul", "Tanggal", "Link"])
-
-            # Isi data
+            writer.writeheader()
             for item in data:
-                writer.writerow([
-                    item.get("title", ""),
-                    item.get("date", ""),
-                    item.get("link", "")
-                ])
+                # Mengambil data berdasarkan key, default ke string kosong jika tidak ada
+                row = {
+                    "title": item.get("title", ""),
+                    "date": item.get("date", ""),
+                    "link": item.get("link", "")
+                }
+                writer.writerow(row)
 
-        print(f"Data berhasil disimpan ke {filename}")
+        print(f"✅ Sukses! Data tersimpan di: {filename}")
 
     except Exception as e:
-        print("Gagal menyimpan file:", e)
+        print(f"❌ Terjadi kesalahan: {e}")

@@ -1,32 +1,24 @@
-# ==========================================
-# File: gui/main_window.py
-# ==========================================
-
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QPushButton, QLineEdit,
     QTableWidget, QTableWidgetItem, QLabel,
-    QSpinBox, QMessageBox, QProgressBar
+    QSpinBox, QMessageBox
 )
-from PyQt5.QtCore import Qt
 
-# Import sesuai struktur folder
-from scraper.link_scraper import run_full_scraper
+# Import mesin milik Julfi dan Iqbal/Orang 2
+from utils.worker import ScraperWorker
 from export.export_csv import export_to_csv
 
-
 class MainWindow(QWidget):
-
     def __init__(self):
         super().__init__()
-
-        self.setWindowTitle("News Scraper")
+        self.setWindowTitle("News Scraper (Anti-Freeze Edition)")
         self.resize(900, 600)
 
         layout = QVBoxLayout()
 
         # INPUT URL WEBSITE
         self.search_input = QLineEdit()
-        self.search_input.setPlaceholderText("Masukkan URL halaman berita (contoh: https://nasional.kompas.com)")
+        self.search_input.setPlaceholderText("Masukkan URL (contoh: https://indeks.kompas.com/news)")
         layout.addWidget(QLabel("URL Website Berita"))
         layout.addWidget(self.search_input)
 
@@ -34,90 +26,86 @@ class MainWindow(QWidget):
         layout.addWidget(QLabel("Jumlah Artikel"))
         self.limit_spin = QSpinBox()
         self.limit_spin.setMinimum(1)
-        self.limit_spin.setMaximum(20)
+        self.limit_spin.setMaximum(50)
         self.limit_spin.setValue(5)
         layout.addWidget(self.limit_spin)
 
-        # BUTTON SCRAPE
+        # TOMBOL SCRAPE
         self.scrape_button = QPushButton("Scrape Berita")
-        self.scrape_button.clicked.connect(self.scrape_data)
+        self.scrape_button.clicked.connect(self.mulai_scraping)
         layout.addWidget(self.scrape_button)
 
-        # PROGRESS BAR — hanya muncul saat scraping berjalan
-        self.progress_bar = QProgressBar()
-        self.progress_bar.setRange(0, 0)        # mode indeterminate (animasi terus)
-        self.progress_bar.setVisible(False)
-        layout.addWidget(self.progress_bar)
-
-        # LABEL STATUS
-        self.status_label = QLabel("Siap.")
-        self.status_label.setAlignment(Qt.AlignCenter)
+        # LABEL STATUS (Dapat sinyal dari mesin Julfi)
+        self.status_label = QLabel("Status: Menunggu perintah...")
+        self.status_label.setStyleSheet("color: blue; font-weight: bold;")
         layout.addWidget(self.status_label)
 
-        # TABLE HASIL
+        # TABLE HASIL (4 Kolom buatan Iqbal)
         self.table = QTableWidget()
-        # IQBAL UPDATE: Nambahin kolom jadi 4
         self.table.setColumnCount(4)
-        # IQBAL UPDATE: Nambahin header "Isi Berita"
         self.table.setHorizontalHeaderLabels(["Judul", "Tanggal", "Link", "Isi Berita"])
         layout.addWidget(self.table)
 
-        # BUTTON EXPORT
+        # TOMBOL EXPORT
         self.export_button = QPushButton("Export ke CSV")
         self.export_button.clicked.connect(self.export_data)
         layout.addWidget(self.export_button)
 
         self.setLayout(layout)
+        self.data = []
 
-    # ==========================================
-    # SCRAPE DATA — sekarang pakai QThread
-    # ==========================================
-
-    def scrape_data(self):
-
+    # --- FUNGSI MENGHUBUNGKAN UI DENGAN THREAD JULFI ---
+    def mulai_scraping(self):
         url = self.search_input.text()
         limit = self.limit_spin.value()
 
         if url == "":
-            QMessageBox.warning(self, "Error", "Masukkan URL berita dulu")
+            QMessageBox.warning(self, "Error", "Masukkan URL berita dulu!")
             return
 
-        try:
-            # Jalankan scraper lengkap
-            self.data = run_full_scraper(url, limit)
+        # 1. Matikan tombol biar user gak spam klik
+        self.scrape_button.setEnabled(False)
+        self.table.setRowCount(0) # Bersihkan tabel
+        self.data = []
 
-        except Exception as e:
-            QMessageBox.warning(self, "Error", str(e))
-            return
+        # 2. Nyalakan mesin Thread Julfi
+        self.worker = ScraperWorker(url, limit)
+        
+        # 3. Sambungkan sinyal-sinyal Julfi ke fungsi di UI ini
+        self.worker.progress_update.connect(self.update_status)
+        self.worker.result_ready.connect(self.tampilkan_data)
+        self.worker.error_occurred.connect(self.tampilkan_error)
+        self.worker.finished_scraping.connect(self.scraping_selesai)
 
-        # tampilkan ke tabel
+        # 4. GAS JALANKAN DI BACKGROUND!
+        self.worker.start()
+
+    # --- FUNGSI PENERIMA SINYAL DARI JULFI ---
+    def update_status(self, pesan):
+        self.status_label.setText(f"Status: {pesan}")
+
+    def tampilkan_data(self, articles):
+        self.data = articles
         self.table.setRowCount(len(self.data))
 
-        # Buat worker baru, sambungkan sinyal, lalu jalankan
-        self.worker = ScraperWorker(url=url, limit=limit)
+        for row, item in enumerate(self.data):
+            self.table.setItem(row, 0, QTableWidgetItem(item.get("title", "-")))
+            self.table.setItem(row, 1, QTableWidgetItem(item.get("date", "-")))
+            self.table.setItem(row, 2, QTableWidgetItem(item.get("link", "-")))
+            self.table.setItem(row, 3, QTableWidgetItem(item.get("content", "-")))
 
-        self.table.setItem(
-                row, 0, QTableWidgetItem(item.get("title", "-"))
-            )
+    def tampilkan_error(self, pesan_error):
+        QMessageBox.warning(self, "Error", pesan_error)
 
-        self.table.setItem(
-                row, 1, QTableWidgetItem(item.get("date", "-"))
-            )
+    def scraping_selesai(self):
+        # Nyalakan tombol scrape lagi setelah beres
+        self.scrape_button.setEnabled(True)
 
-        self.table.setItem(
-                row, 2, QTableWidgetItem(item.get("link", "-"))
-            )
-            
-            # IQBAL UPDATE: Menampilkan Konten/Isi Berita di tabel (Kolom indeks ke-3)
-        self.table.setItem(
-                row, 3, QTableWidgetItem(item.get("content", "-"))
-            )
-
+    # --- FUNGSI EXPORT IQBAL ---
     def export_data(self):
         if not self.data:
-            QMessageBox.warning(self, "Error", "Belum ada data untuk disimpan")
+            QMessageBox.warning(self, "Error", "Belum ada data untuk disimpan!")
             return
-
+        
         export_to_csv(self.data)
-
-        QMessageBox.information(self, "Sukses", "Data berhasil diexport ke CSV")
+        QMessageBox.information(self, "Sukses", "Data berhasil diexport ke file CSV di folder projek!")

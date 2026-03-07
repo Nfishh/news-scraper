@@ -4,8 +4,9 @@ from PyQt5.QtWidgets import (
     QSpinBox, QMessageBox
 )
 
-from scraper_cnn import scrape_cnn
-from exporter import export_to_excel
+# Import sesuai struktur folder
+from scraper.link_scraper import run_full_scraper
+from export.export_csv import export_to_csv
 
 
 class MainWindow(QWidget):
@@ -13,15 +14,15 @@ class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("CNN News Scraper")
-        self.resize(800, 600)
+        self.setWindowTitle("News Scraper")
+        self.resize(900, 600)
 
         layout = QVBoxLayout()
 
-        # SEARCH KEYWORD
+        # INPUT URL WEBSITE
         self.search_input = QLineEdit()
-        self.search_input.setPlaceholderText("Masukkan kata kunci berita...")
-        layout.addWidget(QLabel("Search Keyword"))
+        self.search_input.setPlaceholderText("Masukkan URL halaman berita (contoh: https://nasional.kompas.com)")
+        layout.addWidget(QLabel("URL Website Berita"))
         layout.addWidget(self.search_input)
 
         # LIMIT ARTIKEL
@@ -29,8 +30,8 @@ class MainWindow(QWidget):
 
         self.limit_spin = QSpinBox()
         self.limit_spin.setMinimum(1)
-        self.limit_spin.setMaximum(100)
-        self.limit_spin.setValue(15)   # default jumlah artikel
+        self.limit_spin.setMaximum(20)
+        self.limit_spin.setValue(5)
         layout.addWidget(self.limit_spin)
 
         # BUTTON SCRAPE
@@ -40,12 +41,12 @@ class MainWindow(QWidget):
 
         # TABLE HASIL
         self.table = QTableWidget()
-        self.table.setColumnCount(2)
-        self.table.setHorizontalHeaderLabels(["Judul", "Link"])
+        self.table.setColumnCount(3)
+        self.table.setHorizontalHeaderLabels(["Judul", "Tanggal", "Link"])
         layout.addWidget(self.table)
 
         # BUTTON EXPORT
-        self.export_button = QPushButton("Export ke Excel")
+        self.export_button = QPushButton("Export ke CSV")
         self.export_button.clicked.connect(self.export_data)
         layout.addWidget(self.export_button)
 
@@ -55,25 +56,36 @@ class MainWindow(QWidget):
 
     def scrape_data(self):
 
-        keyword = self.search_input.text()
+        url = self.search_input.text()
         limit = self.limit_spin.value()
 
-        if keyword == "":
-            QMessageBox.warning(self, "Error", "Masukkan kata kunci dulu")
+        if url == "":
+            QMessageBox.warning(self, "Error", "Masukkan URL berita dulu")
             return
 
-        self.data = scrape_cnn(keyword, limit)
+        try:
+            # Jalankan scraper lengkap
+            self.data = run_full_scraper(url, limit)
 
+        except Exception as e:
+            QMessageBox.warning(self, "Error", str(e))
+            return
+
+        # tampilkan ke tabel
         self.table.setRowCount(len(self.data))
 
         for row, item in enumerate(self.data):
 
             self.table.setItem(
-                row, 0, QTableWidgetItem(item["title"])
+                row, 0, QTableWidgetItem(item.get("title", "-"))
             )
 
             self.table.setItem(
-                row, 1, QTableWidgetItem(item["link"])
+                row, 1, QTableWidgetItem(item.get("date", "-"))
+            )
+
+            self.table.setItem(
+                row, 2, QTableWidgetItem(item.get("link", "-"))
             )
 
     def export_data(self):
@@ -82,6 +94,6 @@ class MainWindow(QWidget):
             QMessageBox.warning(self, "Error", "Belum ada data untuk disimpan")
             return
 
-        export_to_excel(self.data, "hasil_scraping_cnn.xlsx")
+        export_to_csv(self.data)
 
-        QMessageBox.information(self, "Sukses", "Data berhasil disimpan ke Excel")
+        QMessageBox.information(self, "Sukses", "Data berhasil diexport ke CSV")

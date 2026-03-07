@@ -1,8 +1,13 @@
+# ==========================================
+# File: gui/main_window.py
+# ==========================================
+
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QPushButton, QLineEdit,
     QTableWidget, QTableWidgetItem, QLabel,
-    QSpinBox, QMessageBox
+    QSpinBox, QMessageBox, QProgressBar
 )
+from PyQt5.QtCore import Qt
 
 # Import sesuai struktur folder
 from scraper.link_scraper import run_full_scraper
@@ -27,7 +32,6 @@ class MainWindow(QWidget):
 
         # LIMIT ARTIKEL
         layout.addWidget(QLabel("Jumlah Artikel"))
-
         self.limit_spin = QSpinBox()
         self.limit_spin.setMinimum(1)
         self.limit_spin.setMaximum(20)
@@ -38,6 +42,17 @@ class MainWindow(QWidget):
         self.scrape_button = QPushButton("Scrape Berita")
         self.scrape_button.clicked.connect(self.scrape_data)
         layout.addWidget(self.scrape_button)
+
+        # PROGRESS BAR — hanya muncul saat scraping berjalan
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setRange(0, 0)        # mode indeterminate (animasi terus)
+        self.progress_bar.setVisible(False)
+        layout.addWidget(self.progress_bar)
+
+        # LABEL STATUS
+        self.status_label = QLabel("Siap.")
+        self.status_label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(self.status_label)
 
         # TABLE HASIL
         self.table = QTableWidget()
@@ -54,7 +69,9 @@ class MainWindow(QWidget):
 
         self.setLayout(layout)
 
-        self.data = []
+    # ==========================================
+    # SCRAPE DATA — sekarang pakai QThread
+    # ==========================================
 
     def scrape_data(self):
 
@@ -76,27 +93,27 @@ class MainWindow(QWidget):
         # tampilkan ke tabel
         self.table.setRowCount(len(self.data))
 
-        for row, item in enumerate(self.data):
+        # Buat worker baru, sambungkan sinyal, lalu jalankan
+        self.worker = ScraperWorker(url=url, limit=limit)
 
-            self.table.setItem(
+        self.table.setItem(
                 row, 0, QTableWidgetItem(item.get("title", "-"))
             )
 
-            self.table.setItem(
+        self.table.setItem(
                 row, 1, QTableWidgetItem(item.get("date", "-"))
             )
 
-            self.table.setItem(
+        self.table.setItem(
                 row, 2, QTableWidgetItem(item.get("link", "-"))
             )
             
             # IQBAL UPDATE: Menampilkan Konten/Isi Berita di tabel (Kolom indeks ke-3)
-            self.table.setItem(
+        self.table.setItem(
                 row, 3, QTableWidgetItem(item.get("content", "-"))
             )
 
     def export_data(self):
-
         if not self.data:
             QMessageBox.warning(self, "Error", "Belum ada data untuk disimpan")
             return

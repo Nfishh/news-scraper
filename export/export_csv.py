@@ -37,7 +37,7 @@ def export_to_csv(data, filename="hasil_scraping_berita.csv"):
                 }
                 writer.writerow(row)
 
-        print(f"✅ Sukses! Data tersimpan di: {filename}")
+        print(f"Sukses! Data tersimpan di: {filename}")
 
     except Exception as e:
-        print(f"❌ Terjadi kesalahan: {e}")
+        print(f"Terjadi kesalahan: {e}")

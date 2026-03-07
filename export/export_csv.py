@@ -15,15 +15,15 @@ def export_to_csv(data, filename="hasil_scraping_berita.csv"):
         return
 
     try:
-        # Menangani pembuatan folder jika path mengandung folder (misal: 'export/hasil.csv')
+        # Menangani pembuatan folder jika path mengandung folder
         directory = os.path.dirname(filename)
         if directory and not os.path.exists(directory):
             os.makedirs(directory)
 
         # 'utf-8-sig' agar Excel menampilkan teks Indonesia dengan sempurna
         with open(filename, mode="w", newline="", encoding="utf-8-sig") as file:
-            # Sesuai dengan data dictionary dari scraper
-            fieldnames = ["title", "date", "link"]
+            # IQBAL NGE-FIX INI: Nambahin "content" biar isi berita ikut kesimpen!
+            fieldnames = ["title", "date", "link", "content"] 
             writer = csv.DictWriter(file, fieldnames=fieldnames)
 
             writer.writeheader()
@@ -32,7 +32,8 @@ def export_to_csv(data, filename="hasil_scraping_berita.csv"):
                 row = {
                     "title": item.get("title", ""),
                     "date": item.get("date", ""),
-                    "link": item.get("link", "")
+                    "link": item.get("link", ""),
+                    "content": item.get("content", "") # <--- Tambahan dari Iqbal
                 }
                 writer.writerow(row)
 

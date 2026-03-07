@@ -41,8 +41,10 @@ class MainWindow(QWidget):
 
         # TABLE HASIL
         self.table = QTableWidget()
-        self.table.setColumnCount(3)
-        self.table.setHorizontalHeaderLabels(["Judul", "Tanggal", "Link"])
+        # IQBAL UPDATE: Nambahin kolom jadi 4
+        self.table.setColumnCount(4)
+        # IQBAL UPDATE: Nambahin header "Isi Berita"
+        self.table.setHorizontalHeaderLabels(["Judul", "Tanggal", "Link", "Isi Berita"])
         layout.addWidget(self.table)
 
         # BUTTON EXPORT
@@ -86,6 +88,11 @@ class MainWindow(QWidget):
 
             self.table.setItem(
                 row, 2, QTableWidgetItem(item.get("link", "-"))
+            )
+            
+            # IQBAL UPDATE: Menampilkan Konten/Isi Berita di tabel (Kolom indeks ke-3)
+            self.table.setItem(
+                row, 3, QTableWidgetItem(item.get("content", "-"))
             )
 
     def export_data(self):
